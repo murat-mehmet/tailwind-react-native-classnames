@@ -44,6 +44,7 @@ export function color(
         kind: `dependent`,
         complete(style) {
           style[STYLE_PROPS[type].color] = color;
+          style.__requireRender = true;
         },
       };
     }
@@ -60,6 +61,7 @@ export function color(
         color = addOpacity(color, opacity);
       }
       style[STYLE_PROPS[type].color] = color;
+      style.__requireRender = true;
     },
   };
 }

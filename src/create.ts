@@ -82,8 +82,9 @@ export function create(customConfig: TwConfig, platform: Platform): TailwindFn {
     }
     cache = newCache;
   }
+  tailwindFn.onRequireRender = undefined as (() => void) | undefined;
 
-  function style(...inputs: ClassInput[]): Style {
+  function style(...inputs: ClassInput[]): Omit<Style, '__requireRender'> {
     let resolved: Style = {};
     const dependents: DependentStyle[] = [];
     const ordered: OrderedStyle[] = [];
@@ -94,7 +95,11 @@ export function create(customConfig: TwConfig, platform: Platform): TailwindFn {
     const joined = utilities.join(` `);
     const cached = cache.getStyle(joined);
     if (cached) {
-      return userStyle ? { ...cached, ...userStyle } : cached;
+      const resolved = userStyle ? { ...cached, ...userStyle } : cached;
+      const {__requireRender, ...resolvedRest} = resolved;
+      if (__requireRender && tailwindFn.onRequireRender)
+        tailwindFn.onRequireRender();
+      return resolvedRest;
     }
 
     for (const utility of utilities) {
@@ -102,8 +107,12 @@ export function create(customConfig: TwConfig, platform: Platform): TailwindFn {
       if (!styleIr) {
         const parser = new UtilityParser(utility, config, cache, device, platform);
         styleIr = parser.parse();
+        if (parser.requireRender)
+          styleIr.__requireRender = true;
       }
 
+      if (styleIr.__requireRender)
+        resolved.__requireRender = true;
       switch (styleIr.kind) {
         case `complete`:
           resolved = { ...resolved, ...styleIr.style };
@@ -155,10 +164,15 @@ export function create(customConfig: TwConfig, platform: Platform): TailwindFn {
       resolved = { ...resolved, ...userStyle };
     }
 
-    return resolved;
+    const {__requireRender, ...resolvedRest} = resolved;
+    if (__requireRender && tailwindFn.onRequireRender)
+      tailwindFn.onRequireRender();
+    return resolvedRest;
   }
 
   function color(utils: string): string | undefined {
+    if (tailwindFn.onRequireRender)
+      tailwindFn.onRequireRender();
     const styleObj = style(
       utils
         .split(/\s+/g)
@@ -179,6 +193,8 @@ export function create(customConfig: TwConfig, platform: Platform): TailwindFn {
   tailwindFn.color = color;
 
   tailwindFn.prefixMatch = (...prefixes: string[]) => {
+    if (tailwindFn.onRequireRender)
+      tailwindFn.onRequireRender();
     const joined = prefixes.sort().join(`:`);
     const cached = cache.getPrefixMatch(joined);
     if (cached !== undefined) {

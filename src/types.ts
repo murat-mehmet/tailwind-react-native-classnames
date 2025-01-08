@@ -1,11 +1,12 @@
 import type { ViewStyle, TextStyle, ImageStyle } from 'react-native';
 
 export interface TailwindFn {
-  (strings: TemplateStringsArray, ...values: (string | number)[]): Style;
-  style: (...inputs: ClassInput[]) => Style;
+  (strings: TemplateStringsArray, ...values: (string | number)[]): Omit<Style, '__requireRender'>;
+  style: (...inputs: ClassInput[]) => Omit<Style, '__requireRender'>;
   color: (color: string) => string | undefined;
   prefixMatch: (...prefixes: string[]) => boolean;
   memoBuster: string;
+  onRequireRender?: () => void;
 
   // NB: @see https://www.typescriptlang.org/tsconfig#stripInternal
 
@@ -109,7 +110,7 @@ export type Direction =
 
 export type Style = {
   [key: string]: string[] | string | number | boolean | Style;
-};
+} & RequireRenderStyle;
 
 export enum ConfigType {
   fontSize = `fontSize`,
@@ -136,12 +137,16 @@ export type DependentStyle = {
   complete: (style: Style) => string | void;
 };
 
+export type RequireRenderStyle = {
+  __requireRender?: true;
+};
+
 /**
  * An "Intermediate Representation" of a style object,
  * that may, or may not require some post-processing,
  * merging with other styles, etc.
  */
-export type StyleIR = NullStyle | OrderedStyle | DependentStyle | CompleteStyle;
+export type StyleIR = (NullStyle | OrderedStyle | DependentStyle | CompleteStyle) & RequireRenderStyle;
 
 export enum Unit {
   rem = `rem`,

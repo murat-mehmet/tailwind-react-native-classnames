@@ -24,6 +24,7 @@ export default class UtilityParser {
   private order?: number;
   private isNull = false;
   private isNegative = false;
+  requireRender = false;
   private context: ParseContext = {};
 
   public constructor(
@@ -310,6 +311,7 @@ export default class UtilityParser {
 
     const match = prefix.match(/^(min|max)-(w|h)-\[([^\]]+)\]$/);
     if (!match) return false;
+    this.requireRender = true;
 
     if (!this.context.device?.windowDimensions) {
       this.isNull = true;
@@ -369,6 +371,7 @@ export default class UtilityParser {
     // loop through the prefixes ONE time, extracting useful info
     for (const prefix of prefixes) {
       if (widthBreakpoints[prefix]) {
+        this.requireRender = true;
         const breakpointOrder = widthBreakpoints[prefix]?.[2];
         if (breakpointOrder !== undefined) {
           this.order = (this.order ?? 0) + breakpointOrder;
@@ -386,6 +389,7 @@ export default class UtilityParser {
       } else if (isPlatform(prefix)) {
         this.isNull = prefix !== platform;
       } else if (isOrientation(prefix)) {
+        this.requireRender = true;
         if (!device.windowDimensions) {
           this.isNull = true;
         } else {
@@ -400,12 +404,14 @@ export default class UtilityParser {
           }
         }
       } else if (prefix === `retina`) {
+        this.requireRender = true;
         if (device.pixelDensity === 2) {
           this.incrementOrder();
         } else {
           this.isNull = true;
         }
       } else if (prefix === `dark`) {
+        this.requireRender = true;
         if (device.colorScheme !== `dark`) {
           this.isNull = true;
         } else {
