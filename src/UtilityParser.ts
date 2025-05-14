@@ -16,6 +16,7 @@ import { widthHeight, size, minMaxWidthHeight } from './resolve/width-height';
 import { letterSpacing } from './resolve/letter-spacing';
 import { opacity } from './resolve/opacity';
 import { shadowOpacity, shadowOffset } from './resolve/shadow';
+import { rotate, scale, skew, transformNone, translate } from './resolve/transform';
 
 export default class UtilityParser {
   private position = 0;
@@ -299,6 +300,30 @@ export default class UtilityParser {
     if (this.consumePeeked(`size-`)) {
       style = size(this.rest, this.context, theme);
       if (style) return style;
+    }
+
+    if (this.consumePeeked(`scale-`)) {
+      style = scale(this.rest, this.context, theme?.scale);
+      if (style) return style;
+    }
+
+    if (this.consumePeeked(`rotate-`)) {
+      style = rotate(this.rest, this.context, theme?.rotate);
+      if (style) return style;
+    }
+
+    if (this.consumePeeked(`skew-`)) {
+      style = skew(this.rest, this.context, theme?.skew);
+      if (style) return style;
+    }
+
+    if (this.consumePeeked(`translate-`)) {
+      style = translate(this.rest, this.context, theme?.translate);
+      if (style) return style;
+    }
+
+    if (this.consumePeeked(`transform-none`)) {
+      return transformNone();
     }
 
     h.warn(`\`${this.rest}\` unknown or invalid utility`);
